@@ -1,16 +1,24 @@
 class TweetsController < UITableViewController
-  def viewDidLoad
+  stylesheet :main
+
+  layout do
     @tweets = []
 
-    searchBar = UISearchBar.alloc.initWithFrame(CGRectMake(0, 0, self.tableView.frame.size.width, 0))
-    searchBar.delegate = self;
-    searchBar.showsCancelButton = true;
-    searchBar.sizeToFit
-    view.tableHeaderView = searchBar
-    view.dataSource = view.delegate = self
+    @searchBar = UISearchBar.new
 
-    searchBar.text = 'xcode crash'
-    searchBarSearchButtonClicked(searchBar)
+    # Why stylesheets not working for these?
+    @searchBar.frame = [[0, 0], [tableView.frame.size.width, 0]]
+    @searchBar.sizeToFit
+    @searchBar.text = "xcode crash"
+
+    layout @searchBar, :search_bar
+    view.tableHeaderView = @searchBar
+  end
+
+  def layoutDidLoad
+    view.dataSource = view.delegate = self
+    @searchBar.delegate = self
+    searchBarSearchButtonClicked(@searchBar)
   end
 
   def searchBarSearchButtonClicked(searchBar)
@@ -18,20 +26,16 @@ class TweetsController < UITableViewController
     url = "http://search.twitter.com/search.json?q=#{query}"
 
     @tweets.clear
-    Dispatch::Queue.concurrent.async do
-      json = nil
-      begin
-        json = JSONParser.parse_from_url(url)
-      rescue RuntimeError => e
-        presentError e.message
+    BW::HTTP.get(url) do |response|
+      if response.ok?
+        new_tweets = []
+        BW::JSON.parse(response.body.to_str)['results'].each do |dict|
+          new_tweets << Tweet.new(dict)
+        end
+        load_tweets(new_tweets)
+      else
+        App.alert(response.error_message)
       end
-
-      new_tweets = []
-      json['results'].each do |dict|
-        new_tweets << Tweet.new(dict)
-      end
-
-      Dispatch::Queue.main.sync { load_tweets(new_tweets) }
     end
 
     searchBar.resignFirstResponder
@@ -44,11 +48,6 @@ class TweetsController < UITableViewController
   def load_tweets(tweets)
     @tweets = tweets
     view.reloadData
-  end
-
-  def presentError(error)
-    # TODO
-    $stderr.puts error.description
   end
 
   def tableView(tableView, numberOfRowsInSection:section)
@@ -67,7 +66,8 @@ class TweetsController < UITableViewController
   def reloadRowForTweet(tweet)
     row = @tweets.index(tweet)
     if row
-      view.reloadRowsAtIndexPaths([NSIndexPath.indexPathForRow(row, inSection:0)], withRowAnimation:false)
+      view.reloadRowsAtIndexPaths([NSIndexPath.indexPathForRow(row, inSection:0)],
+                                  withRowAnimation:false)
     end
   end
 end
