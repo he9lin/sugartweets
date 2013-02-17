@@ -3,11 +3,12 @@ class TweetCell < UITableViewCell
   MessageFontSize = 14
 
   def self.cellForTweet(tweet, inTableView:tableView)
-    cell = tableView.dequeueReusableCellWithIdentifier(TweetCell::CellID) || TweetCell.alloc.initWithStyle(UITableViewCellStyleDefault, reuseIdentifier:CellID)
+    cell = tableView.dequeueReusableCellWithIdentifier(TweetCell::CellID) ||
+      TweetCell.alloc.initWithStyle(UITableViewCellStyleDefault, reuseIdentifier:CellID)
     cell.fillWithTweet(tweet, inTableView:tableView)
     cell
   end
- 
+
   def initWithStyle(style, reuseIdentifier:cellid)
     if super
       self.textLabel.numberOfLines = 0
@@ -15,14 +16,14 @@ class TweetCell < UITableViewCell
     end
     self
   end
- 
+
   def fillWithTweet(tweet, inTableView:tableView)
     self.textLabel.text = tweet.message
-    
+
     unless tweet.profile_image
       self.imageView.image = nil
       Dispatch::Queue.concurrent.async do
-        profile_image_data = NSData.alloc.initWithContentsOfURL(NSURL.URLWithString(tweet.profile_image_url))
+        profile_image_data = NSData.alloc.initWithContentsOfURL(tweet.profile_image_url.nsurl)
         if profile_image_data
           tweet.profile_image = UIImage.alloc.initWithData(profile_image_data)
           Dispatch::Queue.main.sync do
@@ -42,6 +43,7 @@ class TweetCell < UITableViewCell
     [57, size.height + 8].max
   end
 
+  # http://stackoverflow.com/questions/728372/when-is-layoutsubviews-called
   def layoutSubviews
     super
     self.imageView.frame = CGRectMake(2, 2, 49, 49)
