@@ -11,9 +11,10 @@ class TweetCell < UITableViewCell
 
   def initWithStyle(style, reuseIdentifier:cellid)
     if super
-      self.textLabel.numberOfLines = 0
-      self.textLabel.font = UIFont.systemFontOfSize(MessageFontSize)
+      setupStylesheet(:cell)
+      layout(self, :tweet_cell)
     end
+
     self
   end
 
@@ -39,7 +40,8 @@ class TweetCell < UITableViewCell
 
   def self.heightForTweet(tweet, width)
     constrain = CGSize.new(width - 57, 1000)
-    size = tweet.message.sizeWithFont(UIFont.systemFontOfSize(MessageFontSize), constrainedToSize:constrain)
+    size = tweet.message.sizeWithFont(
+      UIFont.systemFontOfSize(MessageFontSize), constrainedToSize:constrain)
     [57, size.height + 8].max
   end
 
@@ -49,5 +51,11 @@ class TweetCell < UITableViewCell
     self.imageView.frame = CGRectMake(2, 2, 49, 49)
     label_size = self.frame.size
     self.textLabel.frame = CGRectMake(57, 0, label_size.width - 59, label_size.height)
+  end
+
+  private
+
+  def setupStylesheet(stylesheet)
+    self.stylesheet = Teacup::Stylesheet[stylesheet]
   end
 end
