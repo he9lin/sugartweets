@@ -23,11 +23,10 @@ class TweetCell < UITableViewCell
 
     unless tweet.profile_image
       self.imageView.image = nil
-      Dispatch::Queue.concurrent.async do
-        profile_image_data = NSData.alloc.initWithContentsOfURL(tweet.profile_image_url.nsurl)
-        if profile_image_data
+      EM.schedule do
+        if profile_image_data = NSData.alloc.initWithContentsOfURL(tweet.profile_image_url.nsurl)
           tweet.profile_image = UIImage.alloc.initWithData(profile_image_data)
-          Dispatch::Queue.main.sync do
+          EM.schedule_on_main do
             self.imageView.image = tweet.profile_image
             tableView.delegate.reloadRowForTweet(tweet)
           end
